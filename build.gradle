@@ -1,0 +1,70 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+}
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+ext {
+    sparkVersion = '3.3.2'
+    luceneVersion = "9.11.1"
+    opensearch_version = "2.15.0"
+    lombokVersion = "1.18.28"
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11) // or whichever version you're targeting
+    }
+}
+
+dependencies {
+    implementation "org.apache.spark:spark-core_2.12:${sparkVersion}"
+    implementation "org.apache.spark:spark-sql_2.12:${sparkVersion}"
+    implementation group: 'org.opensearch', name: 'opensearch-x-content', version:  "${opensearch_version}"
+    implementation group: 'org.opensearch', name: 'opensearch-common', version:  "${opensearch_version}"
+    implementation group: 'org.opensearch', name: 'opensearch-core', version: "${opensearch_version}"
+    implementation group: 'org.opensearch', name: 'opensearch', version: "${opensearch_version}"
+    implementation group: 'org.opensearch', name: 'opensearch-x-content', version: "${opensearch_version}"
+    implementation group: 'org.opensearch.plugin', name: 'repository-s3', version: "2.15.0-SNAPSHOT"
+    implementation 'org.json:json:20210307' // Add this line for org.json
+
+    // Add Lombok dependency
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+    testImplementation platform('org.junit:junit-bom:5.9.1')
+    testImplementation group: 'com.h2database', name: 'h2', version: '2.3.230'
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+
+    // Add Lombok for tests as well
+    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+}
+
+test {
+    useJUnitPlatform()
+}
+
+
+shadowJar {
+    archiveClassifier.set('bundled')
+    mergeServiceFiles()
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+    exclude 'META-INF/*.SF'
+
+    zip64 = true
+    
+    dependencies {
+        exclude(dependency('org.apache.spark::'))
+    }
+}
+
+tasks.build.dependsOn tasks.shadowJar
